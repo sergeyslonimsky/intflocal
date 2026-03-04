@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -44,6 +46,9 @@ type runner struct {
 	settings Settings
 	once     sync.Once
 	cfg      *config.Config
+
+	moduleOnce sync.Once
+	modulePath string // cached module path read from go.mod
 
 	// CLI flags (used when running standalone, ignored when settings are provided via plugin).
 	flagExcludePackages string
@@ -91,8 +96,7 @@ func (r *runner) run(pass *analysis.Pass) (any, error) {
 	r.initConfig()
 
 	// Check if this package should be analyzed.
-	modulePath := extractModulePath(pass.Pkg.Path())
-	if !r.cfg.ShouldCheckPackage(pass.Pkg.Path(), modulePath) {
+	if !r.cfg.ShouldCheckPackage(pass.Pkg.Path(), r.resolveModulePath(pass)) {
 		return nil, nil
 	}
 
@@ -118,8 +122,12 @@ func (r *runner) checkField(pass *analysis.Pass, field *ast.Field) {
 		return
 	}
 
-	// Unwrap pointer types.
-	if ptr, ok := typ.(*types.Pointer); ok {
+	// Unwrap all pointer levels: *T, **T, etc.
+	for {
+		ptr, ok := typ.(*types.Pointer)
+		if !ok {
+			break
+		}
 		typ = ptr.Elem()
 	}
 
@@ -162,23 +170,27 @@ func (r *runner) checkField(pass *analysis.Pass, field *ast.Field) {
 		return
 	}
 
-	// Determine the field name for the diagnostic message.
-	fieldName := fieldIdentName(field)
+	ifaceName := pkg.Name() + "." + obj.Name()
 
+	// Named fields: report a separate diagnostic for each name so that
+	// "a, b extiface.Iface" produces two distinct findings.
+	if len(field.Names) > 0 {
+		for _, name := range field.Names {
+			pass.Report(analysis.Diagnostic{
+				Pos:     name.Pos(),
+				End:     field.Type.End(),
+				Message: fmt.Sprintf("struct field %q uses external interface %q; define it locally as a private interface", name.Name, ifaceName),
+			})
+		}
+		return
+	}
+
+	// Embedded field (anonymous).
 	pass.Report(analysis.Diagnostic{
 		Pos:     field.Type.Pos(),
 		End:     field.Type.End(),
-		Message: fmt.Sprintf("struct field %q uses external interface %q; define it locally as a private interface", fieldName, pkg.Name()+"."+obj.Name()),
+		Message: fmt.Sprintf("struct field \"(embedded)\" uses external interface %q; define it locally as a private interface", ifaceName),
 	})
-}
-
-// fieldIdentName returns the name of a struct field, or "(embedded)" for anonymous fields.
-func fieldIdentName(field *ast.Field) string {
-	if len(field.Names) > 0 {
-		return field.Names[0].Name
-	}
-
-	return "(embedded)"
 }
 
 // isStdlib reports whether pkgPath belongs to the Go standard library.
@@ -193,14 +205,52 @@ func isStdlib(pkgPath string) bool {
 	return !strings.Contains(first, ".")
 }
 
-// extractModulePath extracts the module path from a package path.
-// For "github.com/user/repo/internal/pkg" it returns "github.com/user/repo".
+// resolveModulePath returns the module path for the package being analyzed.
+// It reads go.mod from the filesystem (cached after the first call) and falls
+// back to a best-effort heuristic when go.mod is not found (e.g. in tests).
+func (r *runner) resolveModulePath(pass *analysis.Pass) string {
+	r.moduleOnce.Do(func() {
+		r.modulePath = findModulePath(pass)
+	})
+	if r.modulePath != "" {
+		return r.modulePath
+	}
+	return extractModulePath(pass.Pkg.Path())
+}
+
+// findModulePath walks up the directory tree from the first source file of the
+// package until it finds a go.mod, then returns the declared module path.
+func findModulePath(pass *analysis.Pass) string {
+	if len(pass.Files) == 0 {
+		return ""
+	}
+	filename := pass.Fset.Position(pass.Files[0].Pos()).Filename
+	dir := filepath.Dir(filename)
+	for {
+		data, err := os.ReadFile(filepath.Join(dir, "go.mod"))
+		if err == nil {
+			for _, line := range strings.Split(string(data), "\n") {
+				line = strings.TrimSpace(line)
+				if after, ok := strings.CutPrefix(line, "module "); ok {
+					return strings.TrimSpace(after)
+				}
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
+}
+
+// extractModulePath is a fallback heuristic used when go.mod is not accessible
+// (e.g. in analysistest). It assumes a three-segment module path which covers
+// the common "host.tld/user/repo" pattern.
 func extractModulePath(pkgPath string) string {
-	// Heuristic: module path is the first 3 parts for domain-based paths.
 	parts := strings.SplitN(pkgPath, "/", 4)
 	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
 		return strings.Join(parts[:3], "/")
 	}
-
 	return pkgPath
 }

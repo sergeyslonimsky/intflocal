@@ -1,6 +1,6 @@
 package example
 
-import "example/extiface"
+import "example.com/extiface"
 
 // localIface is a locally defined private interface — this is the expected pattern.
 type localIface interface {
@@ -34,4 +34,15 @@ type EmbeddedBad struct {
 // PointerBad demonstrates pointer to external interface.
 type PointerBad struct {
 	dep *extiface.MyInterface // want `struct field "dep" uses external interface "extiface.MyInterface"; define it locally as a private interface`
+}
+
+// DoublePointerBad demonstrates double pointer to external interface.
+type DoublePointerBad struct {
+	dep **extiface.MyInterface // want `struct field "dep" uses external interface "extiface.MyInterface"; define it locally as a private interface`
+}
+
+// MultiNameBad demonstrates multiple field names sharing the same external interface type.
+// Each name must produce its own diagnostic.
+type MultiNameBad struct {
+	a, b extiface.MyInterface // want `struct field "a" uses external interface "extiface.MyInterface"; define it locally as a private interface` `struct field "b" uses external interface "extiface.MyInterface"; define it locally as a private interface`
 }

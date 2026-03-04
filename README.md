@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/sergeyslonimsky/intflocal/actions/workflows/ci.yml/badge.svg)](https://github.com/sergeyslonimsky/intflocal/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/sergeyslonimsky/intflocal)](https://goreportcard.com/report/github.com/sergeyslonimsky/intflocal)
-[![codecov](https://codecov.io/gh/sergeyslonimsky/intflocal/branch/main/graph/badge.svg)](https://codecov.io/gh/sergeyslonimsky/intflocal)
+[![codecov](https://codecov.io/gh/sergeyslonimsky/intflocal/branch/master/graph/badge.svg)](https://codecov.io/gh/sergeyslonimsky/intflocal)
 [![Go Reference](https://pkg.go.dev/badge/github.com/sergeyslonimsky/intflocal.svg)](https://pkg.go.dev/github.com/sergeyslonimsky/intflocal)
+[![GitHub release](https://img.shields.io/github/v/release/sergeyslonimsky/intflocal)](https://github.com/sergeyslonimsky/intflocal/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Go linter that checks struct fields use locally defined private interfaces instead of importing them from external packages.

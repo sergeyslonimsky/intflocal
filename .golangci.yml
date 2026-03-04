@@ -1,0 +1,16 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - intflocal
+  settings:
+    custom:
+      intflocal:
+        type: "module"
+        description: "Checks that struct interface dependencies are defined locally as private interfaces"
+        settings:
+          packages:
+            - "./..."
+          excludePackages: []
+          excludeTypes: []

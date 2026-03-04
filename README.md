@@ -34,6 +34,10 @@ Defining interfaces locally:
 - Makes testing easier with focused mocks
 - Follows the principle of accepting interfaces, returning structs
 
+## Requirements
+
+Go 1.23 or later.
+
 ## Installation
 
 ```bash

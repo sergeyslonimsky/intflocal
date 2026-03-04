@@ -7,7 +7,7 @@
 .claude/
 
 # Binaries
-intflocal
+./intflocal
 custom-gcl
 
 # Local development (machine-specific, see README)

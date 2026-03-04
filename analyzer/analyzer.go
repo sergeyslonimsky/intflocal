@@ -206,10 +206,14 @@ func isStdlib(pkgPath string) bool {
 }
 
 // resolveModulePath returns the module path for the package being analyzed.
-// It reads go.mod from the filesystem (cached after the first call) and falls
-// back to a best-effort heuristic when go.mod is not found (e.g. in tests).
+// It uses pass.Module when available (set by golangci-lint and most drivers),
+// falls back to reading go.mod from the filesystem, and finally to a heuristic.
 func (r *runner) resolveModulePath(pass *analysis.Pass) string {
 	r.moduleOnce.Do(func() {
+		if pass.Module != nil && pass.Module.Path != "" {
+			r.modulePath = pass.Module.Path
+			return
+		}
 		r.modulePath = findModulePath(pass)
 	})
 	if r.modulePath != "" {

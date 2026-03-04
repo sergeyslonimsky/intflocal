@@ -11,9 +11,9 @@ type Config struct {
 
 // Settings is the raw settings from golangci-lint configuration.
 type Settings struct {
-	Packages        []string `json:"packages"`
-	ExcludeTypes    []string `json:"excludeTypes"`
-	ExcludePackages []string `json:"excludePackages"`
+	Packages        []string `json:"packages"        mapstructure:"packages"`
+	ExcludeTypes    []string `json:"excludeTypes"    mapstructure:"excludeTypes"`
+	ExcludePackages []string `json:"excludePackages" mapstructure:"excludePackages"`
 }
 
 // New creates a Config from raw Settings.

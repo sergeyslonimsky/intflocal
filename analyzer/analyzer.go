@@ -182,33 +182,15 @@ func fieldIdentName(field *ast.Field) string {
 }
 
 // isStdlib reports whether pkgPath belongs to the Go standard library.
+// Stdlib packages never contain a dot in the first path segment (e.g. "fmt", "net/http", "internal/reflectlite"),
+// while third-party packages always do (e.g. "github.com/user/pkg").
 func isStdlib(pkgPath string) bool {
-	// Use the standard library package list approach:
-	// stdlib packages are well-known and don't contain dots in first segment.
-	// However, we need to check against the actual stdlib list to avoid
-	// false positives with test packages.
 	first := pkgPath
 	if i := strings.IndexByte(pkgPath, '/'); i >= 0 {
 		first = pkgPath[:i]
 	}
 
-	return stdlibRoots[first]
-}
-
-// stdlibRoots contains the top-level packages of the Go standard library.
-var stdlibRoots = map[string]bool{
-	"archive": true, "bufio": true, "bytes": true, "cmp": true,
-	"compress": true, "container": true, "context": true, "crypto": true,
-	"database": true, "debug": true, "embed": true, "encoding": true,
-	"errors": true, "expvar": true, "flag": true, "fmt": true,
-	"go": true, "hash": true, "html": true, "image": true,
-	"index": true, "io": true, "iter": true, "log": true,
-	"maps": true, "math": true, "mime": true, "net": true,
-	"os": true, "path": true, "plugin": true, "reflect": true,
-	"regexp": true, "runtime": true, "slices": true, "sort": true,
-	"strconv": true, "strings": true, "structs": true, "sync": true,
-	"syscall": true, "testing": true, "text": true, "time": true,
-	"unicode": true, "unique": true, "unsafe": true, "weak": true,
+	return !strings.Contains(first, ".")
 }
 
 // extractModulePath extracts the module path from a package path.

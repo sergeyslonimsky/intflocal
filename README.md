@@ -85,20 +85,22 @@ plugins:
 2. Add to `.golangci.yml`:
 
 ```yaml
+linters-settings:
+  custom:
+    intflocal:
+      type: "module"
+      settings:
+        packages:
+          - "./internal/services/..."
+        excludePackages:
+          - "github.com/some/pkg"
+        excludeTypes:
+          - "github.com/some/pkg.SpecialInterface"
+
 linters:
+  disable-all: true
   enable:
     - intflocal
-  settings:
-    custom:
-      intflocal:
-        type: "module"
-        settings:
-          packages:
-            - "./internal/services/..."
-          excludePackages:
-            - "github.com/some/pkg"
-          excludeTypes:
-            - "github.com/some/pkg.SpecialInterface"
 ```
 
 3. Build and run:

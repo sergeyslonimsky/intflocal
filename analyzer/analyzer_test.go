@@ -50,3 +50,14 @@ func TestAnalyzer_ExcludeType(t *testing.T) {
 	})
 	analysistest.Run(t, testdataDir(), a, "excluded")
 }
+
+// TestAnalyzer_SkipPackages verifies that packages matching skipPackages are not analyzed.
+// Uses "./..." to skip all packages — no diagnostics should be reported even though
+// the "excluded" package contains external interface fields.
+func TestAnalyzer_SkipPackages(t *testing.T) {
+	t.Parallel()
+	a := analyzer.New(config.Settings{
+		SkipPackages: []string{"./..."},
+	})
+	analysistest.Run(t, testdataDir(), a, "excluded")
+}

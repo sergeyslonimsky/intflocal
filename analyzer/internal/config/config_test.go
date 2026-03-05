@@ -121,3 +121,75 @@ func TestShouldCheckPackage(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldCheckPackage_SkipPackages(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		skipPackages []string
+		packages     []string
+		pkgPath      string
+		modulePath   string
+		want         bool
+	}{
+		{
+			name:         "skip overrides default allow-all",
+			skipPackages: []string{"./internal/di/..."},
+			pkgPath:      "github.com/user/repo/internal/di/service",
+			modulePath:   "github.com/user/repo",
+			want:         false,
+		},
+		{
+			name:         "skip does not affect other packages",
+			skipPackages: []string{"./internal/di/..."},
+			pkgPath:      "github.com/user/repo/internal/domain/service",
+			modulePath:   "github.com/user/repo",
+			want:         true,
+		},
+		{
+			name:         "skip overrides whitelist",
+			skipPackages: []string{"./internal/di/..."},
+			packages:     []string{"./internal/..."},
+			pkgPath:      "github.com/user/repo/internal/di/service",
+			modulePath:   "github.com/user/repo",
+			want:         false,
+		},
+		{
+			name:         "skip exact package",
+			skipPackages: []string{"./internal/di"},
+			pkgPath:      "github.com/user/repo/internal/di",
+			modulePath:   "github.com/user/repo",
+			want:         false,
+		},
+		{
+			name:         "skip exact does not affect subpackages",
+			skipPackages: []string{"./internal/di"},
+			pkgPath:      "github.com/user/repo/internal/di/service",
+			modulePath:   "github.com/user/repo",
+			want:         true,
+		},
+		{
+			name:         "multiple skip patterns",
+			skipPackages: []string{"./internal/di/...", "./test/..."},
+			pkgPath:      "github.com/user/repo/test/helpers",
+			modulePath:   "github.com/user/repo",
+			want:         false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := config.New(config.Settings{
+				Packages:     tt.packages,
+				SkipPackages: tt.skipPackages,
+			})
+			got := cfg.ShouldCheckPackage(tt.pkgPath, tt.modulePath)
+			if got != tt.want {
+				t.Errorf("ShouldCheckPackage(%q, %q) = %v, want %v", tt.pkgPath, tt.modulePath, got, tt.want)
+			}
+		})
+	}
+}

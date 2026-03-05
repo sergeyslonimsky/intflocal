@@ -60,17 +60,21 @@ intflocal ./internal/services/...
 intflocal --excludePackages=github.com/some/pkg,github.com/other/pkg ./...
 intflocal --excludeTypes=github.com/some/pkg.SpecialInterface ./...
 
-# Limit scope to specific packages
+# Limit scope to specific packages (whitelist)
 intflocal --packages=./internal/services/...,./pkg/handlers/... ./...
+
+# Skip specific packages (blacklist)
+intflocal --skipPackages=./internal/di/...,./test/... ./...
 ```
 
 ### Flags
 
 | Flag | Description | Example |
 |------|-------------|---------|
-| `-excludePackages` | Comma-separated list of packages to allow imports from | `github.com/some/pkg,github.com/other/pkg` |
+| `-excludePackages` | Comma-separated list of packages whose interfaces are always allowed | `github.com/some/pkg,github.com/other/pkg` |
 | `-excludeTypes` | Comma-separated list of fully qualified type names to allow | `github.com/some/pkg.MyInterface` |
-| `-packages` | Comma-separated list of package patterns to check | `./internal/services/...,./pkg/handlers/...` |
+| `-packages` | Whitelist: only check these package patterns | `./internal/services/...,./pkg/handlers/...` |
+| `-skipPackages` | Blacklist: skip these package patterns from analysis | `./internal/di/...,./test/...` |
 
 ### With golangci-lint (module plugin)
 
@@ -93,6 +97,8 @@ linters-settings:
       settings:
         packages:
           - "./internal/services/..."
+        skipPackages:
+          - "./internal/di/..."
         excludePackages:
           - "github.com/some/pkg"
         excludeTypes:

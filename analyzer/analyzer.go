@@ -54,12 +54,14 @@ type runner struct {
 	flagExcludePackages string
 	flagExcludeTypes    string
 	flagPackages        string
+	flagSkipPackages    string
 }
 
 func (r *runner) registerFlags(fs *flag.FlagSet) {
 	fs.StringVar(&r.flagExcludePackages, "excludePackages", "", "comma-separated list of packages to exclude (e.g. github.com/some/pkg,github.com/other/pkg)")
 	fs.StringVar(&r.flagExcludeTypes, "excludeTypes", "", "comma-separated list of fully qualified type names to exclude (e.g. github.com/some/pkg.MyInterface)")
 	fs.StringVar(&r.flagPackages, "packages", "", "comma-separated list of package patterns to check (e.g. ./internal/services/...,./pkg/handlers/...)")
+	fs.StringVar(&r.flagSkipPackages, "skipPackages", "", "comma-separated list of package patterns to skip from analysis (e.g. ./internal/di/...,./test/...)")
 }
 
 func (r *runner) initConfig() {
@@ -75,6 +77,9 @@ func (r *runner) initConfig() {
 		}
 		if r.flagPackages != "" {
 			s.Packages = splitCSV(r.flagPackages)
+		}
+		if r.flagSkipPackages != "" {
+			s.SkipPackages = splitCSV(r.flagSkipPackages)
 		}
 
 		r.cfg = config.New(s)

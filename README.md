@@ -37,7 +37,7 @@ Defining interfaces locally:
 
 ## Requirements
 
-Go 1.22 or later.
+Go 1.26 or later.
 
 ## Installation
 
